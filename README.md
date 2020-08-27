@@ -1,2 +1,2 @@
 # Mandelbrot.js
- Visualizing the Mandelbrot Set in JavaScript
+ Simple way to visualize the Mandelbrot Set in JavaScript

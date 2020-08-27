@@ -1,0 +1,25 @@
+{
+  "name": "mandelbrot",
+  "version": "1.0.0",
+  "description": "Visualizing the Mandelbrot Set in JavaScript",
+  "private": true,
+  "scripts": {
+    "build": "webpack index.js --mode=development",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mathjs": "^7.2.0",
+    "moment": "^2.27.0",
+    "plotly.js-dist": "^1.54.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.4",
+    "@babel/preset-env": "^7.11.0",
+    "babel-loader": "^8.1.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "main": "index.js"
+}
