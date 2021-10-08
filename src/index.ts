@@ -26,9 +26,10 @@ Mandelbrot.applyPixel = (i, j, intensity,x_coordinates,y_coordinates) => {
     const blue = index + 2;
     const alpha = index + 3;
 
+    // data[red] = (1/Math.tan(y_coordinates/x_coordinates))*multiplier;
     data[red] = Math.sqrt(x_coordinates**2+y_coordinates**2)*multiplier;
     data[green] = Math.sqrt((x_coordinates+1)**2+(y_coordinates)**2)*multiplier;
-    data[blue] = Math.sqrt((x_coordinates*0.5)**2+(y_coordinates*0.5)**2)*multiplier;
+    data[blue] = (Math.sqrt((x_coordinates)**2+(y_coordinates+1)**2))*multiplier;
     data[alpha] = intensity*multiplier;
   // ctx.fillStyle = `rgba(255,255,255,${intensity * 10})`;
   // ctx.fillRect(i, j, 1, 1)
