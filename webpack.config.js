@@ -4,7 +4,7 @@ require("@babel/register");
 
 module.exports = {
   mode: "development",
-  entry: ["webpack/hot/dev-server", "./src/index.js"],
+  entry: ["webpack/hot/dev-server", "./src/index.ts"],
   output: {
     filename: "static/js/bundle.js",
     path: path.resolve(__dirname, "dist"),
@@ -12,6 +12,11 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.tsx?$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
@@ -34,7 +39,7 @@ module.exports = {
     }),
   ],
   resolve: {
-    extensions: ["", ".js", ".jsx", ".css"],
+    extensions: [".ts", ".js", ".css"],
     modules: [path.resolve("./src"), path.resolve("./node_modules")],
   },
   devServer: {
