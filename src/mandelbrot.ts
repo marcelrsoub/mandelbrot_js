@@ -1,17 +1,16 @@
-import { add, Complex, complex, index, MathType, matrix, multiply, pow, range, sqrt, transpose, zeros } from "mathjs";
+import { add, Complex, complex, pow, range, sqrt } from "mathjs";
 
 export default class MandelbrotCalculation {
   points: number;
   limits: number[];
-  mandelbrot: any;
   max: number;
-  applyPixel:(i:number,j:number,intensity:number)=>void | undefined
+  applyPixel:(i:number,j:number,intensity:number,x_coordinates:number,y_coordinates:number)=>void | undefined
 
   constructor(points) {
     this.points = points;
     this.max = 0;
   }
-  core(limits = [-2.5, 1, -1.75, 1.75], iteration_number = 100, boundary = 2) {
+  core(limits = [-2.5, 1, -1.75, 1.75], iteration_number = 20, boundary = 2) {
     const startTime = performance.now()
     this.limits = limits;
 
@@ -26,7 +25,6 @@ export default class MandelbrotCalculation {
       (limits[3] - limits[2]) / this.points
     ).toArray();
 
-    let mandelbrot = matrix(zeros(this.points, this.points)).toArray();
 
     for (let i = 0; i < x.length; i++) {
       for (let j = 0; j < y.length; j++) {
@@ -35,38 +33,32 @@ export default class MandelbrotCalculation {
 
         let c = complex(x_pixel, y_pixel);
         let z = c;
-        console.clear()
-        console.log("x=",i)
-        console.log("y=", j)
-
-        for (let iteration = 0; iteration < iteration_number; iteration++) {
+        
+        for (let iteration = 0; iteration <= iteration_number; iteration++) {
           z = <Complex>add(pow(z,2), c);
           const boundaryCheck = sqrt(z.im ** 2 + z.re ** 2);
           if ( boundaryCheck >= boundary) {
             if (iteration > this.max) {
               this.max = iteration;
             }
-            mandelbrot[i][j] = iteration;
-            if (this.applyPixel) {
-              this.applyPixel(i, j, iteration/iteration_number);
-            }
+            // PAINTING LAYERS
+            // if (this.applyPixel) {
+            //   this.applyPixel(i, j, iteration/iteration_number);
+            // }
             break;
+          } else if (boundaryCheck <= boundary && iteration == iteration_number) {
+            //PAINTING INSIDE OF MANDELBROT SET
+            if (this.applyPixel) {
+              this.applyPixel(i, j, 1,x_pixel,y_pixel);
+            }
           }
         }
       }
     }
-
-    // mandelbrot = matrix(mandelbrot);
-    // mandelbrot = transpose(mandelbrot);
-    mandelbrot = multiply(mandelbrot, 1 / this.max); //normalize the matrix
     
     const endTime = performance.now()
     console.log(`Mandelbrot calculated in ${Math.round((endTime-startTime)/1000 * 100) / 100} seconds`);
-    
-
-    this.mandelbrot = mandelbrot;
   }
 }
 
-// const Mandel = new MandelbrotCalculation();
-// Mandel.core(100);
+// TODO: use Web Workers to optimize calculation
