@@ -135,8 +135,10 @@ class MouseSubject {
     canvas.addEventListener("mousemove", (e: MouseEvent) => {
       const screenLimit = this.canvas.width;
       if (this.mousedown) {
-        this.x = (2 * e.movementX) / screenLimit - 1;
-        this.y = (2 * e.movementY) / screenLimit - 1;
+        this.x = (2 * e.offsetX) / screenLimit - 1; //FIXME: implementi correct panning
+        // this.x = e.offsetX;
+        this.y = 0;
+        this.y = -((2 * e.offsetY) / screenLimit - 1);
         console.log(this.x);
 
         this.notifyObservers();
