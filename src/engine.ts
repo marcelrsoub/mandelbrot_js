@@ -3,12 +3,12 @@ import {
   DEFAULT_CENTER_Y,
   DEFAULT_SCALE,
   interpolateView,
-  iterationsFor,
   pan,
   zoomAt,
 } from "./math/view";
 import type { View, ViewTransform } from "./math/view";
 import { planViewFlight } from "./math/flight";
+import { clampIterations, DEFAULT_ITERATIONS } from "./math/iteration";
 import { PERTURBATION_SCALE_THRESHOLD, Renderer } from "./render/renderer";
 
 type Quality = 0.5 | 0.65 | 0.82 | 1;
@@ -30,7 +30,7 @@ export class Engine {
     width: 1,
     height: 1,
   };
-  private maxIter = 300;
+  private maxIter = DEFAULT_ITERATIONS;
   private iterationMultiplier = 1;
   private quality: Quality = FULL_QUALITY;
   private rafPending = false;
@@ -154,9 +154,8 @@ export class Engine {
   }
 
   adjustIterations(factor: number): void {
-    const baseIterations = iterationsFor(this.view);
-    const nextIterations = Math.min(5000, Math.max(300, Math.round(this.maxIter * factor)));
-    this.iterationMultiplier = nextIterations / baseIterations;
+    const nextIterations = clampIterations(this.maxIter * factor);
+    this.iterationMultiplier = nextIterations / DEFAULT_ITERATIONS;
     this.updateIterationCount();
     this.noteInteraction();
   }
@@ -197,8 +196,7 @@ export class Engine {
   }
 
   private updateIterationCount(): void {
-    const baseIterations = iterationsFor(this.view);
-    this.maxIter = Math.min(5000, Math.max(300, Math.round(baseIterations * this.iterationMultiplier)));
+    this.maxIter = clampIterations(DEFAULT_ITERATIONS * this.iterationMultiplier);
   }
 
   private noteInteraction(): void {

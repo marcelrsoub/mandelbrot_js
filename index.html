@@ -39,6 +39,7 @@
             <div><dt>Pan</dt><dd>Drag with a mouse or one finger</dd></div>
             <div><dt>Zoom</dt><dd>Wheel / trackpad, or pinch with two fingers</dd></div>
             <div><dt>Keyboard</dt><dd><kbd>+</kbd> / <kbd>−</kbd> zoom · arrows pan · <kbd>R</kbd> reset</dd></div>
+            <div><dt>Escape detail</dt><dd><kbd>[</kbd> / <kbd>]</kbd> lower / raise the iteration limit</dd></div>
           </dl>
         </section>
 
@@ -53,8 +54,9 @@
         </section>
 
         <p class="precision-note">
-          GPU pixels render in parallel. The image sharpens in a few quick passes after moving. Reference-orbit
-          perturbation supports roughly 50 billion× zoom; deeper views need still-higher precision.
+          Black pixels share a stable 3,000-iteration limit at every zoom; use [ / ] to change it. GPU pixels
+          render in parallel and sharpen in a few quick passes. Reference-orbit perturbation supports roughly
+          50 billion× zoom; deeper views need still-higher precision.
         </p>
       </dialog>
     </main>

@@ -76,6 +76,3 @@ export const interpolateView = (
     scale: from.scale * Math.exp(Math.log(targetScale / from.scale) * eased),
   };
 };
-
-export const iterationsFor = (view: View): number =>
-  Math.min(5000, Math.max(300, Math.round(300 + 100 * Math.log10(DEFAULT_SCALE / view.scale))));

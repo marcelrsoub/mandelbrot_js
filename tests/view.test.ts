@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   complexToScreen,
   interpolateView,
-  iterationsFor,
   MIN_SCALE,
   pan,
   screenToComplex,
@@ -77,15 +76,6 @@ describe("interpolateView", () => {
   });
 });
 
-describe("iterationsFor", () => {
-  it("increases monotonically with zoom and respects its bounds", () => {
-    const shallow = { ...view, scale: 0.002 };
-    const deep = { ...view, scale: 0.00002 };
-    expect(iterationsFor(shallow)).toBeGreaterThan(iterationsFor(view));
-    expect(iterationsFor(deep)).toBeGreaterThan(iterationsFor(shallow));
-    expect(iterationsFor({ ...view, scale: 1 })).toBe(300);
-    expect(iterationsFor({ ...view, scale: 1e-100 })).toBe(5000);
-    expect(MIN_SCALE).toBe(1e-13);
-    expect(iterationsFor({ ...view, scale: MIN_SCALE })).toBe(1370);
-  });
+it("supports perturbation scales much smaller than direct float32 rendering", () => {
+  expect(MIN_SCALE).toBe(1e-13);
 });
