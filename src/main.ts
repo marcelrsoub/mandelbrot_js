@@ -34,8 +34,8 @@ const updateViewReadout = (): void => {
         ? `${Number(zoom.toFixed(1))}×`
         : `${zoom.toExponential(1)}×`;
   viewReadout.textContent =
-    `Re ${view.centerX.toPrecision(8)} · Im ${view.centerY.toPrecision(8)} · ` +
-    `scale ${view.scale.toExponential(2)} · zoom ${zoomText} · ${engine.getMaxIter().toLocaleString()} iterations`;
+    `Re ${view.centerX.toString()} · Im ${view.centerY.toString()} · ` +
+    `scale ${view.scale.toString()} · zoom ${zoomText} · ${engine.getMaxIter().toLocaleString()} iterations`;
 };
 
 helpButton.addEventListener("click", () => {

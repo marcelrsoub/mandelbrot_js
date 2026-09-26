@@ -2,7 +2,8 @@ import type { View } from "../math/view";
 import { buildReferenceOrbit } from "../math/perturbation";
 import { FRAGMENT_SHADER, PERTURBATION_FRAGMENT_SHADER, VERTEX_SHADER } from "./shader";
 
-export const PERTURBATION_SCALE_THRESHOLD = 1e-5;
+// Switch before float32 coordinate rounding approaches a visible fraction of a pixel.
+export const PERTURBATION_SCALE_THRESHOLD = 1e-3;
 const MAX_REFERENCE_ITERATIONS = 5000;
 const REFERENCE_ITERATION_MARGIN = 128;
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { planViewFlight } from "../src/math/flight";
+import { PERTURBATION_SCALE_THRESHOLD } from "../src/render/renderer";
 
-const PERTURBATION_THRESHOLD = 1e-5;
+const PERTURBATION_THRESHOLD = PERTURBATION_SCALE_THRESHOLD;
 
 describe("planViewFlight", () => {
   it("keeps a deep destination zoom as a precise final phase", () => {
@@ -40,7 +41,7 @@ describe("planViewFlight", () => {
   it("uses one direct phase when both views are in the float32 overview range", () => {
     const phases = planViewFlight(
       { centerX: -0.5, centerY: 0, scale: 0.005 },
-      { centerX: -0.75, centerY: 0.1, scale: 0.00025 },
+      { centerX: -0.75, centerY: 0.1, scale: 0.0025 },
       PERTURBATION_THRESHOLD,
     );
 
