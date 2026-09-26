@@ -3,6 +3,7 @@ import {
   complexToScreen,
   interpolateView,
   iterationsFor,
+  MIN_SCALE,
   pan,
   screenToComplex,
   View,
@@ -40,7 +41,7 @@ describe("zoomAt", () => {
   it("scales inversely with the zoom factor and clamps to finite limits", () => {
     expect(zoomAt(view, 400, 300, 2).scale).toBeCloseTo(0.005);
     expect(zoomAt(view, 400, 300, 1e-30).scale).toBe(10);
-    expect(zoomAt(view, 400, 300, 1e30).scale).toBe(1e-6);
+    expect(zoomAt(view, 400, 300, 1e30).scale).toBe(1e-13);
   });
 });
 
@@ -71,7 +72,7 @@ describe("interpolateView", () => {
     expect(interpolateView(from, { centerX: 1, centerY: 1, scale: 1e-30 }, 2)).toEqual({
       centerX: 1,
       centerY: 1,
-      scale: 1e-6,
+      scale: 1e-13,
     });
   });
 });
@@ -84,5 +85,7 @@ describe("iterationsFor", () => {
     expect(iterationsFor(deep)).toBeGreaterThan(iterationsFor(shallow));
     expect(iterationsFor({ ...view, scale: 1 })).toBe(300);
     expect(iterationsFor({ ...view, scale: 1e-100 })).toBe(5000);
+    expect(MIN_SCALE).toBe(1e-13);
+    expect(iterationsFor({ ...view, scale: MIN_SCALE })).toBe(1370);
   });
 });

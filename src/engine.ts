@@ -8,7 +8,8 @@ import {
   zoomAt,
 } from "./math/view";
 import type { View, ViewTransform } from "./math/view";
-import { Renderer } from "./render/renderer";
+import { planViewFlight } from "./math/flight";
+import { PERTURBATION_SCALE_THRESHOLD, Renderer } from "./render/renderer";
 
 type Quality = 0.5 | 1;
 
@@ -32,6 +33,7 @@ export class Engine {
   private quality: Quality = FULL_QUALITY;
   private rafPending = false;
   private animationFrameId: number | undefined;
+  private allowPerturbation = true;
   private idleTimer: number | undefined;
   private resizeObserver: ResizeObserver | undefined;
 
@@ -53,7 +55,7 @@ export class Engine {
     requestAnimationFrame((timestamp) => {
       this.rafPending = false;
       this.resizeDrawingBuffer();
-      this.renderer.render(this.view, this.maxIter);
+      this.renderer.render(this.view, this.maxIter, 0, this.allowPerturbation);
     });
   };
 
@@ -92,14 +94,26 @@ export class Engine {
       return;
     }
 
+    const phases = planViewFlight(from, to, PERTURBATION_SCALE_THRESHOLD);
+    if (phases.length === 0) {
+      this.setQuality(FULL_QUALITY);
+      return;
+    }
+
+    const totalWeight = phases.reduce((sum, phase) => sum + phase.weight, 0);
+    this.allowPerturbation = phases[0].allowPerturbation;
     this.setQuality(INTERACTIVE_QUALITY);
     this.invalidate();
-    const startedAt = performance.now();
+    let phaseIndex = 0;
+    let phaseStartedAt = performance.now();
     const safeDuration = Number.isFinite(durationMs) ? Math.max(1, durationMs) : FLY_DURATION_MS;
 
     const animate = (timestamp: number): void => {
-      const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / safeDuration));
-      const next = interpolateView(from, to, progress);
+      const phase = phases[phaseIndex];
+      this.allowPerturbation = phase.allowPerturbation;
+      const phaseDuration = (safeDuration * phase.weight) / totalWeight;
+      const progress = Math.min(1, Math.max(0, (timestamp - phaseStartedAt) / phaseDuration));
+      const next = interpolateView(phase.from, phase.to, progress);
       this.view.centerX = next.centerX;
       this.view.centerY = next.centerY;
       this.view.scale = next.scale;
@@ -109,8 +123,16 @@ export class Engine {
       if (progress < 1) {
         this.animationFrameId = requestAnimationFrame(animate);
       } else {
-        this.animationFrameId = undefined;
-        this.scheduleFullQuality();
+        phaseIndex += 1;
+        if (phaseIndex < phases.length) {
+          phaseStartedAt = timestamp;
+          this.allowPerturbation = phases[phaseIndex].allowPerturbation;
+          this.animationFrameId = requestAnimationFrame(animate);
+        } else {
+          this.animationFrameId = undefined;
+          this.allowPerturbation = true;
+          this.scheduleFullQuality();
+        }
       }
     };
 
@@ -195,5 +217,6 @@ export class Engine {
   private cancelFlight(): void {
     if (this.animationFrameId !== undefined) cancelAnimationFrame(this.animationFrameId);
     this.animationFrameId = undefined;
+    this.allowPerturbation = true;
   }
 }

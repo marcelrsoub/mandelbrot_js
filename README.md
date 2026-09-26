@@ -35,9 +35,11 @@ The places menu includes Seahorse Valley, the spiral junction, the period-three 
 Pointer / keyboard / place selection → Engine + CSS-pixel view math → WebGL2 fragment shader → Fullscreen canvas
 ```
 
-Each fragment independently tests one complex coordinate on the GPU, so the orbit calculations run in parallel across the image. The shader skips points inside the main cardioid and period-two bulb analytically, then exits as soon as any remaining orbit escapes; TypeScript does no per-pixel rendering. A single fullscreen-triangle draw renders a frame. While moving, the engine halves the drawing-buffer resolution and restores device-pixel-ratio-capped quality after 150 ms; it coalesces view changes to the animation-frame clock. Pure view transforms and the JavaScript escape-time oracle are covered by Vitest.
+Each fragment independently tests one complex coordinate on the GPU, so the orbit calculations run in parallel across the image. The shader skips points inside the main cardioid and period-two bulb analytically, then exits as soon as any remaining orbit escapes; TypeScript does no per-pixel rendering. A single fullscreen-triangle draw renders a frame. While moving, the engine halves the drawing-buffer resolution and restores device-pixel-ratio-capped quality after 150 ms; it coalesces view changes to the animation-frame clock.
 
-View scale is measured in complex units per CSS pixel, keeping cursor zoom and pan consistent across screens and render qualities. Current float32 coordinates are clamped to a practical maximum near 5,000×; deeper zoom requires higher-precision arithmetic.
+View scale is measured in complex units per CSS pixel, keeping cursor zoom and pan consistent across screens and render qualities. At close scales the renderer computes a double-double reference orbit, uploads its high/low float components, and evaluates each pixel's offset with `δzₙ₊₁ = 2Zₙδzₙ + δzₙ² + δc`. Nearby views reuse the cached orbit and periodically rebase it as the camera moves. This extends practical zoom to about 50 billion×; still deeper views eventually require higher precision and glitch correction. Pure view transforms, reference-orbit packing, and the JavaScript escape-time oracle are covered by Vitest.
+
+At the `1e-13` scale with 1,370 iterations, a 1,280×800 WebGL2 timer-query check measured a 7.63 ms median GPU frame after warm-up (three samples, no disjoint result).
 
 ## Run locally
 

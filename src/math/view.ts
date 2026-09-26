@@ -18,9 +18,9 @@ export const DEFAULT_CENTER_X = -0.5;
 export const DEFAULT_CENTER_Y = 0;
 export const DEFAULT_SCALE = 0.005;
 
-// Float32 shader coordinates near the default center stop resolving pixels
-// reliably below this scale. Deeper exploration needs higher-precision math.
-export const MIN_SCALE = 1e-6;
+// Perturbation rendering keeps a high/low reference orbit so per-pixel offsets
+// remain useful far below ordinary float32 coordinate precision.
+export const MIN_SCALE = 1e-13;
 export const MAX_SCALE = 10;
 
 export const screenToComplex = (view: View, px: number, py: number): [number, number] => [
