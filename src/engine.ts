@@ -164,6 +164,10 @@ export class Engine {
     return { ...this.view };
   }
 
+  getMaxIter(): number {
+    return this.maxIter;
+  }
+
   dispose(): void {
     this.cancelScheduledRefinement();
     this.cancelFlight();

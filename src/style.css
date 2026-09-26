@@ -156,6 +156,16 @@ h2 {
   line-height: 1.6;
 }
 
+.view-readout {
+  margin: -0.6rem 0 1.25rem;
+  color: #8293af;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
 .help-section + .help-section {
   margin-top: 1.4rem;
   padding-top: 1.25rem;

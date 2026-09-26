@@ -28,7 +28,7 @@ If an orbit ever grows beyond `|z| = 2`, it escapes and `c` is outside the Mande
 | Fewer / more escape iterations | `[` / `]` |
 | Visit a notable region | Open `?` and choose a destination |
 
-The places menu includes Seahorse Valley, the spiral junction, the period-three bulb, a mini Mandelbrot, and a Misiurewicz point. Each destination is a button with its approximate complex coordinates and magnification; selecting one smoothly interpolates the view and can be interrupted by panning or zooming.
+The places menu includes Seahorse Valley, the spiral junction, the period-three bulb, a mini Mandelbrot, and a Misiurewicz point. Each destination is a button with its approximate complex coordinates and magnification; selecting one smoothly interpolates the view and can be interrupted by panning or zooming. Open `?` to see the current center, scale, zoom, and iteration budget for comparing views.
 
 ## Tech and architecture
 

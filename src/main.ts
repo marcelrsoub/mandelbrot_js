@@ -1,6 +1,7 @@
 import "./style.css";
 import { Engine } from "./engine";
 import { bindControls } from "./input/controls";
+import { DEFAULT_SCALE } from "./math/view";
 import { FAMOUS_PLACES } from "./places";
 import { WebGL2UnavailableError } from "./render/renderer";
 
@@ -8,17 +9,40 @@ const canvas = document.querySelector<HTMLCanvasElement>("#canvas");
 const helpButton = document.querySelector<HTMLButtonElement>("#help-button");
 const helpDialog = document.querySelector<HTMLDialogElement>("#help-dialog");
 const closeHelpButton = document.querySelector<HTMLButtonElement>("#close-help");
+const viewReadout = document.querySelector<HTMLElement>("#view-readout");
 const placesList = document.querySelector<HTMLElement>("#places-list");
 const rendererError = document.querySelector<HTMLElement>("#renderer-error");
 
-if (!canvas || !helpButton || !helpDialog || !closeHelpButton || !placesList || !rendererError) {
+if (!canvas || !helpButton || !helpDialog || !closeHelpButton || !viewReadout || !placesList || !rendererError) {
   throw new Error("The Mandelbrot explorer interface is incomplete.");
 }
 
 let engine: Engine | undefined;
 
+const updateViewReadout = (): void => {
+  if (!engine) {
+    viewReadout.textContent = "View coordinates are unavailable until WebGL2 initializes.";
+    return;
+  }
+
+  const view = engine.getView();
+  const zoom = DEFAULT_SCALE / view.scale;
+  const zoomText =
+    zoom >= 1000
+      ? `${(zoom / 1000).toFixed(1)}k×`
+      : zoom >= 1
+        ? `${Number(zoom.toFixed(1))}×`
+        : `${zoom.toExponential(1)}×`;
+  viewReadout.textContent =
+    `Re ${view.centerX.toPrecision(8)} · Im ${view.centerY.toPrecision(8)} · ` +
+    `scale ${view.scale.toExponential(2)} · zoom ${zoomText} · ${engine.getMaxIter().toLocaleString()} iterations`;
+};
+
 helpButton.addEventListener("click", () => {
-  if (!helpDialog.open) helpDialog.showModal();
+  if (!helpDialog.open) {
+    updateViewReadout();
+    helpDialog.showModal();
+  }
 });
 closeHelpButton.addEventListener("click", () => helpDialog.close());
 
