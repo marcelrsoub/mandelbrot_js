@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#05070c" />
+    <title>Mandelbrot Explorer</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="canvas" aria-label="Interactive Mandelbrot fractal"></canvas>
+      <button
+        id="help-button"
+        type="button"
+        aria-label="Open help and famous regions"
+        aria-haspopup="dialog"
+        aria-controls="help-dialog"
+        aria-expanded="false"
+        title="Help and famous regions"
+      >
+        ?
+      </button>
+      <p id="renderer-error" role="alert" hidden></p>
+      <dialog id="help-dialog" aria-labelledby="help-title" aria-describedby="help-intro">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">A tiny guide to an infinite edge</p>
+            <h1 id="help-title">Explore the Mandelbrot set</h1>
+          </div>
+          <button id="close-help" class="icon-button" type="button" aria-label="Close help">×</button>
+        </div>
+        <p id="help-intro" class="help-intro">
+          Drag to roam, zoom to find the small worlds hiding along the boundary.
+        </p>
+
+        <section class="help-section" aria-labelledby="controls-title">
+          <h2 id="controls-title">Controls</h2>
+          <dl class="controls-list">
+            <div><dt>Pan</dt><dd>Drag with a mouse or one finger</dd></div>
+            <div><dt>Zoom</dt><dd>Wheel / trackpad, or pinch with two fingers</dd></div>
+            <div><dt>Keyboard</dt><dd><kbd>+</kbd> / <kbd>−</kbd> zoom · arrows pan · <kbd>R</kbd> reset</dd></div>
+          </dl>
+        </section>
+
+        <section class="help-section" aria-labelledby="places-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="places-title">Famous regions</h2>
+              <p>Choose a place to glide there.</p>
+            </div>
+          </div>
+          <div id="places-list" class="places-list"></div>
+        </section>
+
+        <p class="precision-note">
+          GPU preview is parallel per pixel. Smooth navigation supports over 10× zoom, with a practical
+          float-precision limit near 5,000×.
+        </p>
+      </dialog>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
