@@ -11,13 +11,15 @@ import type { View, ViewTransform } from "./math/view";
 import { planViewFlight } from "./math/flight";
 import { PERTURBATION_SCALE_THRESHOLD, Renderer } from "./render/renderer";
 
-type Quality = 0.5 | 1;
+type Quality = 0.5 | 0.65 | 0.82 | 1;
 
 const MAX_DEVICE_PIXEL_RATIO = 2;
 const INTERACTIVE_QUALITY: Quality = 0.5;
 const FULL_QUALITY: Quality = 1;
 const IDLE_DELAY_MS = 150;
+const REFINEMENT_DELAY_MS = 60;
 const FLY_DURATION_MS = 1500;
+const REFINEMENT_QUALITIES: readonly Quality[] = [0.65, 0.82, FULL_QUALITY];
 
 export class Engine {
   private readonly renderer: Renderer;
@@ -34,7 +36,8 @@ export class Engine {
   private rafPending = false;
   private animationFrameId: number | undefined;
   private allowPerturbation = true;
-  private idleTimer: number | undefined;
+  private qualityTimer: number | undefined;
+  private refinementStage = 0;
   private resizeObserver: ResizeObserver | undefined;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -80,8 +83,7 @@ export class Engine {
     if (![destination.centerX, destination.centerY, destination.scale].every(Number.isFinite)) return;
 
     this.cancelFlight();
-    if (this.idleTimer !== undefined) window.clearTimeout(this.idleTimer);
-    this.idleTimer = undefined;
+    this.cancelScheduledRefinement();
 
     const from: ViewTransform = {
       centerX: this.view.centerX,
@@ -164,7 +166,7 @@ export class Engine {
   }
 
   dispose(): void {
-    if (this.idleTimer !== undefined) window.clearTimeout(this.idleTimer);
+    this.cancelScheduledRefinement();
     this.cancelFlight();
     this.resizeObserver?.disconnect();
     window.removeEventListener("resize", this.resize);
@@ -201,17 +203,38 @@ export class Engine {
 
   private noteInteraction(): void {
     this.cancelFlight();
+    this.cancelScheduledRefinement();
     this.setQuality(INTERACTIVE_QUALITY);
     this.scheduleFullQuality();
     this.invalidate();
   }
 
   private scheduleFullQuality(): void {
-    if (this.idleTimer !== undefined) window.clearTimeout(this.idleTimer);
-    this.idleTimer = window.setTimeout(() => {
-      this.idleTimer = undefined;
-      this.setQuality(FULL_QUALITY);
+    this.cancelScheduledRefinement();
+    this.qualityTimer = window.setTimeout(() => {
+      this.qualityTimer = undefined;
+      this.advanceQuality();
     }, IDLE_DELAY_MS);
+  }
+
+  private advanceQuality(): void {
+    const nextQuality = REFINEMENT_QUALITIES[this.refinementStage];
+    if (nextQuality === undefined) return;
+
+    this.refinementStage += 1;
+    this.setQuality(nextQuality);
+    if (this.refinementStage < REFINEMENT_QUALITIES.length) {
+      this.qualityTimer = window.setTimeout(() => {
+        this.qualityTimer = undefined;
+        this.advanceQuality();
+      }, REFINEMENT_DELAY_MS);
+    }
+  }
+
+  private cancelScheduledRefinement(): void {
+    if (this.qualityTimer !== undefined) window.clearTimeout(this.qualityTimer);
+    this.qualityTimer = undefined;
+    this.refinementStage = 0;
   }
 
   private cancelFlight(): void {
