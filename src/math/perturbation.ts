@@ -1,7 +1,16 @@
+import { mandelIter } from "./mandel";
+import type { View } from "./view";
+
 type DoubleDouble = readonly [number, number];
 
+export interface ReferenceCenter {
+  centerX: number;
+  centerY: number;
+  escapedAt: number | null;
+}
+
 export interface ReferenceOrbit {
-  /** RGBA32F texture data with orbit coordinates in row 0 and bailout margin in row 1. */
+  /** RGBA32F texture data with high, low, and radius-expansion rows per orbit chunk. */
   data: Float32Array;
   textureWidth: number;
   textureHeight: number;
@@ -10,6 +19,38 @@ export interface ReferenceOrbit {
 
 const SPLITTER = 134217729;
 const REFERENCE_MAGNITUDE_LIMIT = 1e15;
+const REFERENCE_CENTER_OFFSETS = [-0.35, -0.2625, -0.175, -0.0875, 0, 0.0875, 0.175, 0.2625, 0.35] as const;
+export const REFERENCE_REBASE_PIXELS = 8;
+
+export const shouldRebaseReference = (centerDeltaX: number, centerDeltaY: number, scale: number): boolean =>
+  Math.hypot(centerDeltaX, centerDeltaY) > REFERENCE_REBASE_PIXELS * scale;
+
+/** Prefer a nearby long-lived orbit to avoid perturbation glitches around escaped references. */
+export const chooseReferenceCenter = (view: View, iterations: number): ReferenceCenter => {
+  let best: ReferenceCenter = { centerX: view.centerX, centerY: view.centerY, escapedAt: 0 };
+  let bestLifetime = -1;
+  let bestDistanceSquared = Number.POSITIVE_INFINITY;
+
+  for (const offsetY of REFERENCE_CENTER_OFFSETS) {
+    for (const offsetX of REFERENCE_CENTER_OFFSETS) {
+      const centerX = view.centerX + offsetX * view.width * view.scale;
+      const centerY = view.centerY - offsetY * view.height * view.scale;
+      const escape = mandelIter(centerX, centerY, iterations);
+      const lifetime = escape ?? iterations + 1;
+      const distanceSquared =
+        (centerX - view.centerX) * (centerX - view.centerX) +
+        (centerY - view.centerY) * (centerY - view.centerY);
+
+      if (lifetime > bestLifetime || (lifetime === bestLifetime && distanceSquared < bestDistanceSquared)) {
+        best = { centerX, centerY, escapedAt: escape };
+        bestLifetime = lifetime;
+        bestDistanceSquared = distanceSquared;
+      }
+    }
+  }
+
+  return best;
+};
 
 const twoSum = (a: number, b: number): [number, number] => {
   const sum = a + b;
@@ -50,17 +91,21 @@ const multiply = (a: DoubleDouble, b: DoubleDouble): [number, number] => {
   return quickTwoSum(product, correction);
 };
 
-const floatParts = (value: DoubleDouble): [number, number] => {
+const floatExpansion = (value: DoubleDouble): [number, number, number, number] => {
   const high = Math.fround(value[0]);
-  const low = Math.fround(value[0] - high + value[1]);
-  return [high, low];
+  const residual1 = value[0] - high + value[1];
+  const middle = Math.fround(residual1);
+  const residual2 = residual1 - middle;
+  const low = Math.fround(residual2);
+  const lowest = Math.fround(residual2 - low);
+  return [high, middle, low, lowest];
 };
 
-const pointOffsets = (textureWidth: number, index: number): [number, number] => {
+const pointOffsets = (textureWidth: number, index: number): [number, number, number] => {
   const group = Math.floor(index / textureWidth);
   const column = index - group * textureWidth;
-  const coordinates = (group * 2 * textureWidth + column) * 4;
-  return [coordinates, coordinates + textureWidth * 4];
+  const coordinates = (group * 3 * textureWidth + column) * 4;
+  return [coordinates, coordinates + textureWidth * 4, coordinates + textureWidth * 8];
 };
 
 const storePoint = (
@@ -70,26 +115,30 @@ const storePoint = (
   real: DoubleDouble,
   imaginary: DoubleDouble,
 ): void => {
-  const [coordinateOffset, marginOffset] = pointOffsets(textureWidth, index);
-  const [realHigh, realLow] = floatParts(real);
-  const [imaginaryHigh, imaginaryLow] = floatParts(imaginary);
+  const [coordinateHighOffset, coordinateLowOffset, marginOffset] = pointOffsets(textureWidth, index);
+  const realParts = floatExpansion(real);
+  const imaginaryParts = floatExpansion(imaginary);
   const normSquared = add(multiply(real, real), multiply(imaginary, imaginary));
-  const margin = floatParts(subtract(normSquared, [4, 0]));
+  const radiusParts = floatExpansion(subtract(normSquared, [4, 0]));
 
-  data[coordinateOffset] = realHigh;
-  data[coordinateOffset + 1] = imaginaryHigh;
-  data[coordinateOffset + 2] = realLow;
-  data[coordinateOffset + 3] = imaginaryLow;
-  data[marginOffset] = margin[0];
-  data[marginOffset + 1] = margin[1];
-  data[marginOffset + 2] = 0;
-  data[marginOffset + 3] = 0;
+  data[coordinateHighOffset] = realParts[0];
+  data[coordinateHighOffset + 1] = imaginaryParts[0];
+  data[coordinateHighOffset + 2] = realParts[1];
+  data[coordinateHighOffset + 3] = imaginaryParts[1];
+  data[coordinateLowOffset] = realParts[2];
+  data[coordinateLowOffset + 1] = imaginaryParts[2];
+  data[coordinateLowOffset + 2] = realParts[3];
+  data[coordinateLowOffset + 3] = imaginaryParts[3];
+  data[marginOffset] = radiusParts[0];
+  data[marginOffset + 1] = radiusParts[1];
+  data[marginOffset + 2] = radiusParts[2];
+  data[marginOffset + 3] = radiusParts[3];
 };
 
 /**
  * Builds a double-double CPU reference orbit and packs each value as high/low
- * float pairs for a WebGL2 RGBA32F texture. Two texture rows are used per orbit
- * chunk: coordinates, then squared-radius-minus-four bailout margins.
+ * float expansions for a WebGL2 RGBA32F texture. Three texture rows are used
+ * per orbit chunk: coordinate high/middle parts, low parts, then bailout margin.
  */
 export const buildReferenceOrbit = (
   centerX: number,
@@ -110,7 +159,7 @@ export const buildReferenceOrbit = (
   const steps = iterations + 1;
   const textureWidth = Math.min(steps, maxTextureSize);
   const groups = Math.ceil(steps / textureWidth);
-  const textureHeight = groups * 2;
+  const textureHeight = groups * 3;
   if (textureHeight > maxTextureSize) {
     throw new RangeError("Reference orbit exceeds the WebGL texture capacity.");
   }
@@ -152,10 +201,22 @@ export const referenceOrbitPoint = (
     throw new RangeError("Reference orbit index is out of range.");
   }
 
-  const [coordinateOffset, marginOffset] = pointOffsets(orbit.textureWidth, index);
+  const [coordinateHighOffset, coordinateLowOffset, marginOffset] = pointOffsets(orbit.textureWidth, index);
   return {
-    real: orbit.data[coordinateOffset] + orbit.data[coordinateOffset + 2],
-    imaginary: orbit.data[coordinateOffset + 1] + orbit.data[coordinateOffset + 3],
-    bailoutMargin: orbit.data[marginOffset] + orbit.data[marginOffset + 1],
+    real:
+      orbit.data[coordinateHighOffset] +
+      orbit.data[coordinateHighOffset + 2] +
+      orbit.data[coordinateLowOffset] +
+      orbit.data[coordinateLowOffset + 2],
+    imaginary:
+      orbit.data[coordinateHighOffset + 1] +
+      orbit.data[coordinateHighOffset + 3] +
+      orbit.data[coordinateLowOffset + 1] +
+      orbit.data[coordinateLowOffset + 3],
+    bailoutMargin:
+      orbit.data[marginOffset] +
+      orbit.data[marginOffset + 1] +
+      orbit.data[marginOffset + 2] +
+      orbit.data[marginOffset + 3],
   };
 };

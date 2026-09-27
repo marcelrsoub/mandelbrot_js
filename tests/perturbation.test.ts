@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildReferenceOrbit, referenceOrbitPoint } from "../src/math/perturbation";
+import {
+  buildReferenceOrbit,
+  chooseReferenceCenter,
+  referenceOrbitPoint,
+  REFERENCE_REBASE_PIXELS,
+  shouldRebaseReference,
+} from "../src/math/perturbation";
 
 describe("buildReferenceOrbit", () => {
   it("stores the initial orbit and known escape values", () => {
@@ -24,11 +30,37 @@ describe("buildReferenceOrbit", () => {
   it("packs multiple orbit chunks into a bounded 2D texture", () => {
     const orbit = buildReferenceOrbit(-1, 0, 8, 8);
     expect(orbit.textureWidth).toBe(8);
-    expect(orbit.textureHeight).toBe(4);
+    expect(orbit.textureHeight).toBe(6);
     expect(referenceOrbitPoint(orbit, 7)).toMatchObject({ real: -1, imaginary: 0, bailoutMargin: -3 });
   });
 
   it("rejects reference orbits that exceed the available texture dimensions", () => {
     expect(() => buildReferenceOrbit(0, 0, 8, 4)).toThrow(RangeError);
+  });
+});
+
+describe("reference rebase distance", () => {
+  it("rebases before the reference center drifts more than eight view pixels", () => {
+    const scale = 1e-13;
+    expect(REFERENCE_REBASE_PIXELS).toBe(8);
+    expect(shouldRebaseReference(7 * scale, 0, scale)).toBe(false);
+    expect(shouldRebaseReference(9 * scale, 0, scale)).toBe(true);
+  });
+});
+
+describe("reference center selection", () => {
+  it("prefers a nearby long-lived orbit for the seahorse-region view", () => {
+    const view = {
+      centerX: -0.7660939653700035,
+      centerY: 0.0969992397183866,
+      scale: 0.000004717095223578413,
+      width: 1899,
+      height: 1291,
+    };
+    const reference = chooseReferenceCenter(view, 3128);
+    expect(reference.escapedAt).toBeNull();
+    expect(Math.hypot(reference.centerX - view.centerX, reference.centerY - view.centerY)).toBeLessThan(
+      Math.max(view.width, view.height) * view.scale * 0.5,
+    );
   });
 });

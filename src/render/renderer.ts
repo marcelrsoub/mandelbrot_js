@@ -1,9 +1,9 @@
 import type { View } from "../math/view";
-import { buildReferenceOrbit } from "../math/perturbation";
+import { buildReferenceOrbit, chooseReferenceCenter, shouldRebaseReference } from "../math/perturbation";
 import { FRAGMENT_SHADER, PERTURBATION_FRAGMENT_SHADER, VERTEX_SHADER } from "./shader";
 
 // Switch before float32 coordinate rounding approaches a visible fraction of a pixel.
-export const PERTURBATION_SCALE_THRESHOLD = 1e-4;
+export const PERTURBATION_SCALE_THRESHOLD = 1e-6;
 const MAX_REFERENCE_ITERATIONS = 5000;
 const REFERENCE_ITERATION_MARGIN = 128;
 
@@ -229,12 +229,10 @@ export class Renderer {
     const centerY = this.referenceCenterY;
     const centerDeltaX = centerX === undefined ? Number.POSITIVE_INFINITY : view.centerX - centerX;
     const centerDeltaY = centerY === undefined ? Number.POSITIVE_INFINITY : view.centerY - centerY;
-    const rebaseDistance = Math.hypot(centerDeltaX, centerDeltaY);
-    const rebaseLimit = Math.max(view.width, view.height) * view.scale * 0.5;
     const needsReference =
       centerX === undefined ||
       centerY === undefined ||
-      rebaseDistance > rebaseLimit ||
+      shouldRebaseReference(centerDeltaX, centerDeltaY, view.scale) ||
       this.referenceIterations < maxIter;
 
     if (needsReference) {
@@ -242,9 +240,10 @@ export class Renderer {
         MAX_REFERENCE_ITERATIONS,
         maxIter + REFERENCE_ITERATION_MARGIN,
       );
+      const referenceCenter = chooseReferenceCenter(view, referenceIterations);
       const orbit = buildReferenceOrbit(
-        view.centerX,
-        view.centerY,
+        referenceCenter.centerX,
+        referenceCenter.centerY,
         referenceIterations,
         this.maxTextureSize,
       );
@@ -279,8 +278,8 @@ export class Renderer {
         );
       }
 
-      this.referenceCenterX = view.centerX;
-      this.referenceCenterY = view.centerY;
+      this.referenceCenterX = referenceCenter.centerX;
+      this.referenceCenterY = referenceCenter.centerY;
       this.referenceIterations = orbit.steps - 1;
     }
   }
