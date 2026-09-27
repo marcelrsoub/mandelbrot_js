@@ -15,6 +15,7 @@ describe("mandelIter", () => {
 
   it("returns an escape iteration for a point outside the set", () => {
     expect(mandelIter(2, 0, 200)).toBe(2);
+    expect(mandelIter(3, 0, 200)).toBe(1);
   });
 
   it("reports faster escape for points farther outside", () => {
@@ -31,5 +32,9 @@ describe("mandelSmooth", () => {
 
   it("returns null for points in the set", () => {
     expect(mandelSmooth(0, 0, 200)).toBeNull();
+  });
+
+  it("smooth-colors points outside the radius-two bound after one iteration", () => {
+    expect(mandelSmooth(3, 0, 200)).toBeCloseTo(2 - Math.log2(Math.log(3)));
   });
 });

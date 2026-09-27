@@ -43,6 +43,13 @@ void main() {
     return;
   }
 
+  float cMagnitudeSquared = dot(c, c);
+  if (cMagnitudeSquared > 4.0) {
+    float smoothIteration = 2.0 - log2(log(sqrt(cMagnitudeSquared)));
+    outColor = vec4(palette(sqrt(max(smoothIteration, 0.0) / float(u_maxIter))), 1.0);
+    return;
+  }
+
   vec2 z = vec2(0.0);
   float iteration = 0.0;
 
@@ -103,6 +110,15 @@ float bailoutMargin(vec4 orbit, vec4 radius, vec2 delta) {
 void main() {
   vec2 viewPosition = gl_FragCoord.xy * (u_viewSize / u_resolution);
   vec2 deltaC = u_centerDelta + (viewPosition - 0.5 * u_viewSize) * u_scale;
+  vec4 firstOrbit = referenceValue(1, 0);
+  vec4 firstRadius = referenceValue(1, 1);
+  float firstMargin = bailoutMargin(firstOrbit, firstRadius, deltaC);
+  if (firstMargin > 0.0) {
+    float smoothIteration = 2.0 - log2(log(sqrt(4.0 + firstMargin)));
+    outColor = vec4(palette(sqrt(max(smoothIteration, 0.0) / float(u_maxIter))), 1.0);
+    return;
+  }
+
   vec2 deltaZ = vec2(0.0);
   float iteration = 0.0;
   float finalMargin = -4.0;
