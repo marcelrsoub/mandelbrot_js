@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { planViewFlight } from "../src/math/flight";
-import { PERTURBATION_SCALE_THRESHOLD } from "../src/render/renderer";
+import { PERTURBATION_SCALE_THRESHOLD, usesPerturbationAtScale } from "../src/render/renderer";
 
 const PERTURBATION_THRESHOLD = PERTURBATION_SCALE_THRESHOLD;
+
+describe("renderer precision selection", () => {
+  it("uses direct arithmetic at the reported 9.5x view and perturbation for deep zoom", () => {
+    expect(usesPerturbationAtScale(0.0005247397679162522)).toBe(false);
+    expect(usesPerturbationAtScale(1e-5)).toBe(true);
+    expect(usesPerturbationAtScale(1e-13, false)).toBe(false);
+  });
+});
 
 describe("planViewFlight", () => {
   it("keeps a deep destination zoom as a precise final phase", () => {

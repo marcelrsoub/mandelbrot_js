@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { mandelIter, mandelSmooth } from "../src/math/mandel";
+import { isInPeriodTwoBulb, mandelIter, mandelSmooth } from "../src/math/mandel";
+
+describe("period-two bulb interior shortcut", () => {
+  it("recognizes the reported view center as inside the bulb", () => {
+    expect(isInPeriodTwoBulb(-0.8855172255391052, 0.1958515450569268)).toBe(true);
+    expect(isInPeriodTwoBulb(-0.7, 0.2)).toBe(false);
+  });
+});
 
 describe("mandelIter", () => {
   it("returns null for a point inside the set", () => {

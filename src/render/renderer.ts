@@ -3,9 +3,12 @@ import { buildReferenceOrbit } from "../math/perturbation";
 import { FRAGMENT_SHADER, PERTURBATION_FRAGMENT_SHADER, VERTEX_SHADER } from "./shader";
 
 // Switch before float32 coordinate rounding approaches a visible fraction of a pixel.
-export const PERTURBATION_SCALE_THRESHOLD = 1e-3;
+export const PERTURBATION_SCALE_THRESHOLD = 1e-4;
 const MAX_REFERENCE_ITERATIONS = 5000;
 const REFERENCE_ITERATION_MARGIN = 128;
+
+export const usesPerturbationAtScale = (scale: number, allowPerturbation = true): boolean =>
+  allowPerturbation && scale < PERTURBATION_SCALE_THRESHOLD;
 
 export class WebGL2UnavailableError extends Error {
   constructor() {
@@ -125,7 +128,7 @@ export class Renderer {
     this.lastPaletteShift = paletteShift;
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
-    if (allowPerturbation && view.scale < PERTURBATION_SCALE_THRESHOLD) {
+    if (usesPerturbationAtScale(view.scale, allowPerturbation)) {
       this.renderPerturbed(view, maxIter, paletteShift);
       return;
     }

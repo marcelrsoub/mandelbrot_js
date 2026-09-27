@@ -1,3 +1,8 @@
+export function isInPeriodTwoBulb(cx: number, cy: number): boolean {
+  const x = cx + 1;
+  return x * x + cy * cy <= 0.0625;
+}
+
 export function mandelIter(cx: number, cy: number, maxIter: number): number | null {
   let x = 0;
   let y = 0;
