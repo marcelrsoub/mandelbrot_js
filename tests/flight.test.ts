@@ -7,8 +7,9 @@ const PERTURBATION_THRESHOLD = PERTURBATION_SCALE_THRESHOLD;
 describe("renderer precision selection", () => {
   it("uses direct arithmetic at the reported 9.5x view and perturbation for deep zoom", () => {
     expect(usesPerturbationAtScale(0.0005247397679162522)).toBe(false);
+    expect(usesPerturbationAtScale(0.0000046079279361284274)).toBe(false);
     expect(usesPerturbationAtScale(1e-5)).toBe(false);
-    expect(usesPerturbationAtScale(1e-7)).toBe(true);
+    expect(usesPerturbationAtScale(4.607927936128427e-7)).toBe(true);
     expect(usesPerturbationAtScale(1e-13, false)).toBe(false);
   });
 });
